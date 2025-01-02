@@ -159,6 +159,7 @@ const StudentAttendance = ({ situation }) => {
                                         >
                                             <MenuItem value="Present">Present</MenuItem>
                                             <MenuItem value="Absent">Absent</MenuItem>
+                                            <MenuItem value="Sick">Sick</MenuItem>
                                         </Select>
                                     </FormControl>
                                     <FormControl>

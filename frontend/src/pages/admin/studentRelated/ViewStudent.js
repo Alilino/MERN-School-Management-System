@@ -130,7 +130,8 @@ const ViewStudent = () => {
 
     const chartData = [
         { name: 'Present', value: overallAttendancePercentage },
-        { name: 'Absent', value: overallAbsentPercentage }
+        { name: 'Absent', value: overallAbsentPercentage },
+        { name: 'Sick', value: overallAbsentPercentage }
     ];
 
     const subjectData = Object.entries(groupAttendanceBySubject(subjectAttendance)).map(([subName, { subCode, present, sessions }]) => {

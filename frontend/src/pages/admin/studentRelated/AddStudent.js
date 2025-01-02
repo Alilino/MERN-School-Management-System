@@ -5,138 +5,282 @@ import { registerUser } from '../../../redux/userRelated/userHandle';
 import Popup from '../../../components/Popup';
 import { underControl } from '../../../redux/userRelated/userSlice';
 import { getAllSclasses } from '../../../redux/sclassRelated/sclassHandle';
-import { CircularProgress } from '@mui/material';
+import {
+    Box,
+    Button,
+    CircularProgress,
+    Grid,
+    MenuItem,
+    Select,
+    TextField,
+    Typography,
+} from "@mui/material";
 
 const AddStudent = ({ situation }) => {
-    const dispatch = useDispatch()
-    const navigate = useNavigate()
-    const params = useParams()
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const params = useParams();
 
-    const userState = useSelector(state => state.user);
-    const { status, currentUser, response, error } = userState;
+    const userState = useSelector((state) => state.user);
+    const { status, currentUser, response } = userState;
     const { sclassesList } = useSelector((state) => state.sclass);
 
-    const [name, setName] = useState('');
-    const [rollNum, setRollNum] = useState('');
-    const [password, setPassword] = useState('')
-    const [className, setClassName] = useState('')
-    const [sclassName, setSclassName] = useState('')
+    const [formData, setFormData] = useState({
+        name: "",
+        rollNum: "",
+        password: "",
+        sclassName: "",
+        dateOfBirth: "",
+        fatherName: "",
+        fatherPhone: "",
+        fatherEmail: "",
+        motherName: "",
+        motherPhone: "",
+        motherEmail: "",
+        emergencyPhone: "",
+        active: true,
+    });
 
-    const adminID = currentUser._id
-    const role = "Student"
-    const attendance = []
+    const [loader, setLoader] = useState(false);
+    const [showPopup, setShowPopup] = useState(false);
+    const [message, setMessage] = useState("");
+
+    const adminID = currentUser?._id;
 
     useEffect(() => {
         if (situation === "Class") {
-            setSclassName(params.id);
+            setFormData((prev) => ({ ...prev, sclassName: params.id }));
         }
     }, [params.id, situation]);
-
-    const [showPopup, setShowPopup] = useState(false);
-    const [message, setMessage] = useState("");
-    const [loader, setLoader] = useState(false)
 
     useEffect(() => {
         dispatch(getAllSclasses(adminID, "Sclass"));
     }, [adminID, dispatch]);
 
-    const changeHandler = (event) => {
-        if (event.target.value === 'Select Class') {
-            setClassName('Select Class');
-            setSclassName('');
-        } else {
-            const selectedClass = sclassesList.find(
-                (classItem) => classItem.sclassName === event.target.value
-            );
-            setClassName(selectedClass.sclassName);
-            setSclassName(selectedClass._id);
-        }
-    }
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
 
-    const fields = { name, rollNum, password, sclassName, adminID, role, attendance }
+    const handleClassChange = (e) => {
+        const selectedClass = sclassesList.find(
+            (classItem) => classItem.sclassName === e.target.value
+        );
+        setFormData((prev) => ({
+            ...prev,
+            sclassName: selectedClass?._id || "",
+        }));
+    };
 
-    const submitHandler = (event) => {
-        event.preventDefault()
-        if (sclassName === "") {
-            setMessage("Please select a classname")
-            setShowPopup(true)
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!formData.sclassName) {
+            setMessage("Please select a classname");
+            setShowPopup(true);
+            return;
         }
-        else {
-            setLoader(true)
-            dispatch(registerUser(fields, role))
-        }
-    }
+        setLoader(true);
+        const fields = {
+            ...formData,
+            adminID,
+            role: "Student",
+            attendance: [],
+        };
+        dispatch(registerUser(fields, "Student"));
+    };
 
     useEffect(() => {
-        if (status === 'added') {
-            dispatch(underControl())
-            navigate(-1)
+        if (status === "added") {
+            dispatch(underControl());
+            navigate(-1);
+        } else if (status === "failed" || status === "error") {
+            setMessage(response || "Network Error");
+            setShowPopup(true);
+            setLoader(false);
         }
-        else if (status === 'failed') {
-            setMessage(response)
-            setShowPopup(true)
-            setLoader(false)
-        }
-        else if (status === 'error') {
-            setMessage("Network Error")
-            setShowPopup(true)
-            setLoader(false)
-        }
-    }, [status, navigate, error, response, dispatch]);
+    }, [status, navigate, response, dispatch]);
 
     return (
-        <>
-            <div className="register">
-                <form className="registerForm" onSubmit={submitHandler}>
-                    <span className="registerTitle">Add Student</span>
-                    <label>Name</label>
-                    <input className="registerInput" type="text" placeholder="Enter student's name..."
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                        autoComplete="name" required />
+        <Box sx={{ maxWidth: 600, margin: "auto", padding: 3, border: "1px solid #ccc", borderRadius: 2, mt: 4 }}>
+            <Typography variant="h5" mb={2} align="center">
+                Add Student
+            </Typography>
 
-                    {
-                        situation === "Student" &&
-                        <>
-                            <label>Class</label>
-                            <select
-                                className="registerInput"
-                                value={className}
-                                onChange={changeHandler} required>
-                                <option value='Select Class'>Select Class</option>
-                                {sclassesList.map((classItem, index) => (
-                                    <option key={index} value={classItem.sclassName}>
+            <form onSubmit={handleSubmit}>
+                <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                        <TextField
+                            label="Name"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            fullWidth
+                            required
+                        />
+                    </Grid>
+
+                    {situation === "Student" && (
+                        <Grid item xs={12}>
+                            <Select
+                                value={formData.sclassName}
+                                onChange={handleClassChange}
+                                fullWidth
+                                displayEmpty
+                                required
+                            >
+                                <MenuItem value="" disabled>
+                                    Select Class
+                                </MenuItem>
+                                {sclassesList.map((classItem) => (
+                                    <MenuItem key={classItem._id} value={classItem.sclassName}>
                                         {classItem.sclassName}
-                                    </option>
+                                    </MenuItem>
                                 ))}
-                            </select>
-                        </>
-                    }
+                            </Select>
+                        </Grid>
+                    )}
 
-                    <label>Roll Number</label>
-                    <input className="registerInput" type="number" placeholder="Enter student's Roll Number..."
-                        value={rollNum}
-                        onChange={(event) => setRollNum(event.target.value)}
-                        required />
+                    <Grid item xs={6}>
+                        <TextField
+                            label="Roll Number"
+                            name="rollNum"
+                            type="number"
+                            value={formData.rollNum}
+                            onChange={handleChange}
+                            fullWidth
+                            required
+                        />
+                    </Grid>
 
-                    <label>Password</label>
-                    <input className="registerInput" type="password" placeholder="Enter student's password..."
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        autoComplete="new-password" required />
+                    <Grid item xs={6}>
+                        <TextField
+                            label="Password"
+                            name="password"
+                            type="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            fullWidth
+                            required
+                        />
+                    </Grid>
 
-                    <button className="registerButton" type="submit" disabled={loader}>
-                        {loader ? (
-                            <CircularProgress size={24} color="inherit" />
-                        ) : (
-                            'Add'
-                        )}
-                    </button>
-                </form>
-            </div>
+                    <Grid item xs={6}>
+                        <TextField
+                            label="Date of Birth"
+                            name="dateOfBirth"
+                            type="date"
+                            value={formData.dateOfBirth}
+                            onChange={handleChange}
+                            fullWidth
+                            InputLabelProps={{ shrink: true }}
+                        />
+                    </Grid>
+
+                    <Grid item xs={6}>
+                        <TextField
+                            label="Father Name"
+                            name="fatherName"
+                            value={formData.fatherName}
+                            onChange={handleChange}
+                            fullWidth
+                        />
+                    </Grid>
+
+                    <Grid item xs={6}>
+                        <TextField
+                            label="Father Phone"
+                            name="fatherPhone"
+                            value={formData.fatherPhone}
+                            onChange={handleChange}
+                            fullWidth
+                        />
+                    </Grid>
+
+                    <Grid item xs={6}>
+                        <TextField
+                            label="Father Email"
+                            name="fatherEmail"
+                            type="email"
+                            value={formData.fatherEmail}
+                            onChange={handleChange}
+                            fullWidth
+                        />
+                    </Grid>
+
+                    <Grid item xs={6}>
+                        <TextField
+                            label="Mother Name"
+                            name="motherName"
+                            value={formData.motherName}
+                            onChange={handleChange}
+                            fullWidth
+                        />
+                    </Grid>
+
+                    <Grid item xs={6}>
+                        <TextField
+                            label="Mother Phone"
+                            name="motherPhone"
+                            value={formData.motherPhone}
+                            onChange={handleChange}
+                            fullWidth
+                        />
+                    </Grid>
+
+                    <Grid item xs={6}>
+                        <TextField
+                            label="Mother Email"
+                            name="motherEmail"
+                            type="email"
+                            value={formData.motherEmail}
+                            onChange={handleChange}
+                            fullWidth
+                        />
+                    </Grid>
+
+                    <Grid item xs={6}>
+                        <TextField
+                            label="Emergency Phone"
+                            name="emergencyPhone"
+                            value={formData.emergencyPhone}
+                            onChange={handleChange}
+                            fullWidth
+                        />
+                    </Grid>
+
+                    <Grid item xs={6}>
+                        <Select
+                            name="active"
+                            value={formData.active ? "true" : "false"}
+                            onChange={(e) =>
+                                setFormData((prev) => ({ ...prev, active: e.target.value === "true" }))
+                            }
+                            fullWidth
+                        >
+                            <MenuItem value="true">Active</MenuItem>
+                            <MenuItem value="false">Inactive</MenuItem>
+                        </Select>
+                    </Grid>
+                </Grid>
+
+                <Box mt={3} textAlign="center">
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        disabled={loader}
+                        startIcon={loader && <CircularProgress size={20} color="inherit" />}
+                    >
+                        Add Student
+                    </Button>
+                </Box>
+            </form>
+
             <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
-        </>
-    )
-}
+        </Box>
+    );
+};
+
+
 
 export default AddStudent

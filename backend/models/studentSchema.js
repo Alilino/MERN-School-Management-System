@@ -1,17 +1,15 @@
 const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true
-    },
+
     rollNum: {
         type: Number,
-        required: true
+        required: true,
     },
+
     password: {
         type: String,
-        required: true
+        required: true,
     },
     sclassName: {
         type: mongoose.Schema.Types.ObjectId,
@@ -25,8 +23,46 @@ const studentSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        default: "Student"
+        default: "Student",
     },
+
+    dateOfBirth: {
+        type: Date,
+    },
+
+    fatherName: {
+        type: String,
+    },
+
+    fatherPhone: {
+        type: String,
+    },
+
+    fatherEmail: {
+        type: String,
+    },
+
+    motherName: {
+        type: String,
+    },
+
+    motherPhone: {
+        type: String,
+    },
+
+    motherEmail: {
+        type: String,
+    },
+
+    emergencyPhone: {
+        type: String,
+    },
+
+    active: {
+        type: Boolean,
+        default: true,
+    },
+
     examResult: [
         {
             subName: {
@@ -35,26 +71,28 @@ const studentSchema = new mongoose.Schema({
             },
             marksObtained: {
                 type: Number,
-                default: 0
-            }
-        }
+                default: 0,
+            },
+        },
     ],
-    attendance: [{
-        date: {
-            type: Date,
-            required: true
+    attendance: [
+        {
+            date: {
+                type: Date,
+                required: true,
+            },
+            status: {
+                type: String,
+                enum: ['Present', 'Absent', 'Sick'],
+                required: true,
+            },
+            subName: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'subject',
+                required: true,
+            },
         },
-        status: {
-            type: String,
-            enum: ['Present', 'Absent'],
-            required: true
-        },
-        subName: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'subject',
-            required: true
-        }
-    }]
-});
+    ],
+}, { timestamps: true });
 
 module.exports = mongoose.model("student", studentSchema);

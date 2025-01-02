@@ -42,7 +42,7 @@ import ClassDetails from './classRelated/ClassDetails';
 import ShowClasses from './classRelated/ShowClasses';
 import AccountMenu from '../../components/AccountMenu';
 
-const AdminDashboard = () => {
+const AdminDashboard = ({ darkMode, setDarkMode }) => {
     const [open, setOpen] = useState(false);
     const toggleDrawer = () => {
         setOpen(!open);
@@ -57,6 +57,7 @@ const AdminDashboard = () => {
                         <IconButton
                             edge="start"
                             color="inherit"
+                            z-index="9999"
                             aria-label="open drawer"
                             onClick={toggleDrawer}
                             sx={{
@@ -86,7 +87,7 @@ const AdminDashboard = () => {
                     </Toolbar>
                     <Divider />
                     <List component="nav">
-                        <SideBar />
+                        <SideBar darkMode={darkMode} setDarkMode={setDarkMode} />
                     </List>
                 </Drawer>
                 <Box component="main" sx={styles.boxStyled}>
