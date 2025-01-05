@@ -1,80 +1,128 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { addStuff } from '../../../redux/userRelated/userHandle';
-import { underControl } from '../../../redux/userRelated/userSlice';
-import { CircularProgress } from '@mui/material';
-import Popup from '../../../components/Popup';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { addStuff } from "../../../redux/userRelated/userHandle";
+import { underControl } from "../../../redux/userRelated/userSlice";
+import Popup from "../../../components/Popup";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Grid,
+  TextField,
+  Typography,
+} from "@mui/material";
 
 const AddNotice = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { status, response, error } = useSelector(state => state.user);
-  const { currentUser } = useSelector(state => state.user);
+  const { status, response, error, currentUser } = useSelector(
+    (state) => state.user
+  );
 
-  const [title, setTitle] = useState('');
-  const [details, setDetails] = useState('');
-  const [date, setDate] = useState('');
-  const adminID = currentUser._id
+  const [formData, setFormData] = useState({
+    title: "",
+    details: "",
+    date: "",
+  });
 
   const [loader, setLoader] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [message, setMessage] = useState("");
 
-  const fields = { title, details, date, adminID };
-  const address = "Notice"
+  const adminID = currentUser?._id;
 
-  const submitHandler = (event) => {
-    event.preventDefault();
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
     setLoader(true);
-    dispatch(addStuff(fields, address));
+    const fields = { ...formData, adminID };
+    dispatch(addStuff(fields, "Notice"));
   };
 
   useEffect(() => {
-    if (status === 'added') {
-      navigate('/Admin/notices');
-      dispatch(underControl())
-    } else if (status === 'error') {
-      setMessage("Network Error")
-      setShowPopup(true)
-      setLoader(false)
+    if (status === "added") {
+      navigate("/Admin/notices");
+      dispatch(underControl());
+    } else if (status === "failed" || status === "error") {
+      setMessage(response || "Network Error");
+      setShowPopup(true);
+      setLoader(false);
     }
-  }, [status, navigate, error, response, dispatch]);
+  }, [status, navigate, response, dispatch]);
 
   return (
-    <>
-      <div className="register">
-        <form className="registerForm" onSubmit={submitHandler}>
-          <span className="registerTitle">Add Notice</span>
-          <label>Title</label>
-          <input className="registerInput" type="text" placeholder="Enter notice title..."
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            required />
+    <Box
+      sx={{
+        maxWidth: 600,
+        margin: "auto",
+        padding: 3,
+        border: "1px solid #ccc",
+        borderRadius: 2,
+        mt: 4,
+      }}
+    >
+      <Typography variant="h5" mb={2} align="center">
+        Add Notice
+      </Typography>
 
-          <label>Details</label>
-          <input className="registerInput" type="text" placeholder="Enter notice details..."
-            value={details}
-            onChange={(event) => setDetails(event.target.value)}
-            required />
+      <form onSubmit={handleSubmit}>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField
+              label="Title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+          </Grid>
 
-          <label>Date</label>
-          <input className="registerInput" type="date" placeholder="Enter notice date..."
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-            required />
+          <Grid item xs={12}>
+            <TextField
+              label="Details"
+              name="details"
+              value={formData.details}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+          </Grid>
 
-          <button className="registerButton" type="submit" disabled={loader}>
-            {loader ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Add'
-            )}
-          </button>
-        </form>
-      </div>
+          <Grid item xs={12}>
+            <TextField
+              label="Date"
+              name="date"
+              type="date"
+              value={formData.date}
+              onChange={handleChange}
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              required
+            />
+          </Grid>
+        </Grid>
+
+        <Box mt={3} textAlign="center">
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loader}
+            startIcon={loader && <CircularProgress size={20} color="inherit" />}
+          >
+            Add Notice
+          </Button>
+        </Box>
+      </form>
+
       <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
-    </>
+    </Box>
   );
 };
 

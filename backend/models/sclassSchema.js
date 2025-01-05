@@ -5,6 +5,14 @@ const sclassSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    attendanceDates: [
+        {
+            date: {
+                type: Date,
+                required: true,
+            }
+        },
+    ],
     school: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'admin'

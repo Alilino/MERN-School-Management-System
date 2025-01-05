@@ -39,7 +39,8 @@ const TeacherClassDetails = () => {
     })
 
     const StudentsButtonHaver = ({ row }) => {
-        const options = ['Take Attendance', 'Provide Marks'];
+        const options = [];
+        // const options = ['Take Attendance', 'Provide Marks'];
 
         const [open, setOpen] = React.useState(false);
         const anchorRef = React.useRef(null);

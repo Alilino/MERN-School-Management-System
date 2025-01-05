@@ -40,20 +40,62 @@ const sclassList = async (req, res) => {
     }
 };
 
+const setClassAttendance = async (req, res) => {
+    try {
+
+        console.log(req.body)
+        const { classId, date } = req.body;
+
+        if (!date) {
+            return res.status(400).send({ message: "Date is required" });
+        }
+
+        const sclass = await Sclass.findById(classId);
+        if (!sclass) {
+            return res.status(404).send({ message: "Class not found" });
+        }
+
+        const existingAttendance = sclass.attendanceDates.some(attDate => attDate.date.toISOString().split('T')[0] === date);
+
+        if (existingAttendance) {
+            return res.status(400).send({ message: "Attendance for this date already exists" });
+        }
+
+        // Push the date with a date field
+        sclass.attendanceDates.push({ date: new Date(date) });
+
+        const updatedClass = await sclass.save();
+        res.status(200).send({ message: 'Attendance date added successfully', updatedClass });
+    } catch (err) {
+        res.status(500).json({
+            message: "Error setting class attendance",
+            error: err.message
+        });
+    }
+};
+
+
+
 const getSclassDetail = async (req, res) => {
     try {
         let sclass = await Sclass.findById(req.params.id);
         if (sclass) {
-            sclass = await sclass.populate("school", "schoolName")
-            res.send(sclass);
-        }
-        else {
-            res.send({ message: "No class found" });
+            sclass = await sclass.populate("school", "schoolName");
+
+            sclass.attendanceDates.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            res.status(200).json(sclass);
+        } else {
+            res.status(404).send({ message: "No class found" });
         }
     } catch (err) {
-        res.status(500).json(err);
+        res.status(500).json({
+            message: "Error retrieving class details",
+            error: err.message
+        });
     }
-}
+};
+
 
 const getSclassStudents = async (req, res) => {
     try {
@@ -102,4 +144,4 @@ const deleteSclasses = async (req, res) => {
 }
 
 
-module.exports = { sclassCreate, sclassList, deleteSclass, deleteSclasses, getSclassDetail, getSclassStudents };
+module.exports = { sclassCreate, sclassList, deleteSclass, deleteSclasses, getSclassDetail, getSclassStudents, setClassAttendance };

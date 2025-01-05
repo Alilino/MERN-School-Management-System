@@ -63,14 +63,18 @@ const AddStudent = ({ situation }) => {
     };
 
     const handleClassChange = (e) => {
+        console.log(e)
         const selectedClass = sclassesList.find(
             (classItem) => classItem.sclassName === e.target.value
         );
+    
         setFormData((prev) => ({
             ...prev,
-            sclassName: selectedClass?._id || "",
+            sclassName: selectedClass ? selectedClass._id : "",
+            className : e.target.value
         }));
     };
+    
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -122,7 +126,7 @@ const AddStudent = ({ situation }) => {
                     {situation === "Student" && (
                         <Grid item xs={12}>
                             <Select
-                                value={formData.sclassName}
+                                value={formData.className || ""}
                                 onChange={handleClassChange}
                                 fullWidth
                                 displayEmpty

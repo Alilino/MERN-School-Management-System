@@ -64,14 +64,14 @@ const ViewSubject = () => {
         >
           View
         </BlueButton>
-        <PurpleButton
+        {/* <PurpleButton
           variant="contained"
           onClick={() =>
             navigate(`/Admin/subject/student/attendance/${row.id}/${subjectID}`)
           }
         >
           Take Attendance
-        </PurpleButton>
+        </PurpleButton> */}
       </>
     );
   };

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from "react-i18next"; // Importing useTranslation for i18n support
 import { getClassDetails, getClassStudents, getSubjectList } from "../../../redux/sclassRelated/sclassHandle";
 import { deleteUser } from '../../../redux/userRelated/userHandle';
 import {
-    Box, Container, Typography, Tab, IconButton
+  Box, Container, Typography, Tab, IconButton, Paper, Grid
 } from '@mui/material';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
@@ -18,294 +19,380 @@ import SpeedDialTemplate from "../../../components/SpeedDialTemplate";
 import Popup from "../../../components/Popup";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PostAddIcon from '@mui/icons-material/PostAdd';
+import ClassAttendanceSection from "./classAttendance";
+import SchoolIcon from '@mui/icons-material/School'; // Example Icon
+import PeopleIcon from '@mui/icons-material/People'; // Example Icon
+import SubjectIcon from '@mui/icons-material/Subject'; // Example Icon
+import classScheduleImage from '../../../assets/schedule.jpg';
 
 const ClassDetails = () => {
-    const params = useParams()
-    const navigate = useNavigate()
-    const dispatch = useDispatch();
-    const { subjectsList, sclassStudents, sclassDetails, loading, error, response, getresponse } = useSelector((state) => state.sclass);
+  const { t } = useTranslation(); // Hook for translations
+  const params = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { subjectsList, sclassStudents, sclassDetails, loading, error, response, getresponse } = useSelector((state) => state.sclass);
+  
+  const classID = params.id;
 
-    const classID = params.id
+  useEffect(() => {
+    dispatch(getClassDetails(classID, "Sclass"));
+    dispatch(getSubjectList(classID, "ClassSubjects"));
+    dispatch(getClassStudents(classID));
+  }, [dispatch, classID]);
 
-    useEffect(() => {
-        dispatch(getClassDetails(classID, "Sclass"));
-        dispatch(getSubjectList(classID, "ClassSubjects"))
-        dispatch(getClassStudents(classID));
-    }, [dispatch, classID])
+  if (error) {
+    console.log(error);
+  }
 
-    if (error) {
-        console.log(error)
-    }
+  const [value, setValue] = useState('1');
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
 
-    const [value, setValue] = useState('1');
+  const [showPopup, setShowPopup] = useState(false);
+  const [message, setMessage] = useState("");
 
-    const handleChange = (event, newValue) => {
-        setValue(newValue);
+  const deleteHandler = (deleteID, address) => {
+    console.log(deleteID);
+    console.log(address);
+    setMessage(t("deleteDisabled")); // Use translation for disabled delete message
+    setShowPopup(true);
+  };
+
+  const subjectColumns = [
+    { id: 'name', label: t("subjectName"), minWidth: 170 },
+    { id: 'code', label: t("subjectCode"), minWidth: 100 },
+  ];
+
+  const subjectRows = subjectsList && subjectsList.length > 0 && subjectsList.map((subject) => {
+    return {
+      name: subject.subName,
+      code: subject.subCode,
+      id: subject._id,
     };
+  });
 
-    const [showPopup, setShowPopup] = useState(false);
-    const [message, setMessage] = useState("");
+  const SubjectsButtonHaver = ({ row }) => {
+    return (
+      <>
+        <IconButton onClick={() => deleteHandler(row.id, "Subject")}>
+          <DeleteIcon color="error" />
+        </IconButton>
+        <BlueButton
+          variant="contained"
+          onClick={() => {
+            navigate(`/Admin/class/subject/${classID}/${row.id}`)
+          }}
+        >
+          {t("view")}
+        </BlueButton>
+      </>
+    );
+  };
 
-    const deleteHandler = (deleteID, address) => {
-        console.log(deleteID);
-        console.log(address);
-        setMessage("Sorry the delete function has been disabled for now.")
-        setShowPopup(true)
-        // dispatch(deleteUser(deleteID, address))
-        //     .then(() => {
-        //         dispatch(getClassStudents(classID));
-        //         dispatch(resetSubjects())
-        //         dispatch(getSubjectList(classID, "ClassSubjects"))
-        //     })
+  const subjectActions = [
+    {
+      icon: <PostAddIcon color="primary" />, name: t("addNewSubject"),
+      action: () => navigate("/Admin/addsubject/" + classID)
+    },
+    {
+      icon: <DeleteIcon color="error" />, name: t("deleteAllSubjects"),
+      action: () => deleteHandler(classID, "SubjectsClass")
     }
+  ];
 
-    const subjectColumns = [
-        { id: 'name', label: 'Subject Name', minWidth: 170 },
-        { id: 'code', label: 'Subject Code', minWidth: 100 },
-    ]
+  const ClassSubjectsSection = () => {
+    return (
+      <>
+        {response ?
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+            <GreenButton
+              variant="contained"
+              onClick={() => navigate("/Admin/addsubject/" + classID)}
+            >
+              {t("addSubjects")}
+            </GreenButton>
+          </Box>
+          :
+          <>
+            <Typography variant="h5" gutterBottom>
+              {t("subjectsList")}:
+            </Typography>
 
-    const subjectRows = subjectsList && subjectsList.length > 0 && subjectsList.map((subject) => {
-        return {
-            name: subject.subName,
-            code: subject.subCode,
-            id: subject._id,
-        };
-    })
-
-    const SubjectsButtonHaver = ({ row }) => {
-        return (
-            <>
-                <IconButton onClick={() => deleteHandler(row.id, "Subject")}>
-                    <DeleteIcon color="error" />
-                </IconButton>
-                <BlueButton
-                    variant="contained"
-                    onClick={() => {
-                        navigate(`/Admin/class/subject/${classID}/${row.id}`)
-                    }}
-                >
-                    View
-                </BlueButton >
-            </>
-        );
-    };
-
-    const subjectActions = [
-        {
-            icon: <PostAddIcon color="primary" />, name: 'Add New Subject',
-            action: () => navigate("/Admin/addsubject/" + classID)
-        },
-        {
-            icon: <DeleteIcon color="error" />, name: 'Delete All Subjects',
-            action: () => deleteHandler(classID, "SubjectsClass")
+            <TableTemplate buttonHaver={SubjectsButtonHaver} columns={subjectColumns} rows={subjectRows} />
+            <SpeedDialTemplate actions={subjectActions} />
+          </>
         }
-    ];
+      </>
+    );
+  };
 
-    const ClassSubjectsSection = () => {
-        return (
-            <>
-                {response ?
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                        <GreenButton
-                            variant="contained"
-                            onClick={() => navigate("/Admin/addsubject/" + classID)}
-                        >
-                            Add Subjects
-                        </GreenButton>
-                    </Box>
-                    :
-                    <>
-                        <Typography variant="h5" gutterBottom>
-                            Subjects List:
-                        </Typography>
+  const studentColumns = [
+    { id: 'name', label: t("name"), minWidth: 170 },
+    { id: 'rollNum', label: t("rollNumber"), minWidth: 100 },
+  ];
 
-                        <TableTemplate buttonHaver={SubjectsButtonHaver} columns={subjectColumns} rows={subjectRows} />
-                        <SpeedDialTemplate actions={subjectActions} />
-                    </>
-                }
-            </>
-        )
-    }
-
-    const studentColumns = [
-        { id: 'name', label: 'Name', minWidth: 170 },
-        { id: 'rollNum', label: 'Roll Number', minWidth: 100 },
-    ]
-
-    const studentRows = sclassStudents.map((student) => {
-        return {
-            name: student.name,
-            rollNum: student.rollNum,
-            id: student._id,
-        };
-    })
-
-    const StudentsButtonHaver = ({ row }) => {
-        return (
-            <>
-                <IconButton onClick={() => deleteHandler(row.id, "Student")}>
-                    <PersonRemoveIcon color="error" />
-                </IconButton>
-                <BlueButton
-                    variant="contained"
-                    onClick={() => navigate("/Admin/students/student/" + row.id)}
-                >
-                    View
-                </BlueButton>
-                <PurpleButton
-                    variant="contained"
-                    onClick={() =>
-                        navigate("/Admin/students/student/attendance/" + row.id)
-                    }
-                >
-                    Attendance
-                </PurpleButton>
-            </>
-        );
+  const studentRows = sclassStudents.map((student) => {
+    return {
+      name: student.name,
+      rollNum: student.rollNum,
+      id: student._id,
     };
+  });
 
-    const studentActions = [
-        {
-            icon: <PersonAddAlt1Icon color="primary" />, name: 'Add New Student',
-            action: () => navigate("/Admin/class/addstudents/" + classID)
-        },
-        {
-            icon: <PersonRemoveIcon color="error" />, name: 'Delete All Students',
-            action: () => deleteHandler(classID, "StudentsClass")
-        },
-    ];
+  const StudentsButtonHaver = ({ row }) => {
+    return (
+      <>
+        <IconButton onClick={() => deleteHandler(row.id, "Student")}>
+          <PersonRemoveIcon color="error" />
+        </IconButton>
+        <BlueButton
+          variant="contained"
+          onClick={() => navigate("/Admin/students/student/" + row.id)}
+        >
+          {t("view")}
+        </BlueButton>
+      </>
+    );
+  };
 
-    const ClassStudentsSection = () => {
-        return (
-            <>
-                {getresponse ? (
-                    <>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                            <GreenButton
-                                variant="contained"
-                                onClick={() => navigate("/Admin/class/addstudents/" + classID)}
-                            >
-                                Add Students
-                            </GreenButton>
-                        </Box>
-                    </>
-                ) : (
-                    <>
-                        <Typography variant="h5" gutterBottom>
-                            Students List:
-                        </Typography>
+  const studentActions = [
+    {
+      icon: <PersonAddAlt1Icon color="primary" />, name: t("addNewStudent"),
+      action: () => navigate("/Admin/class/addstudents/" + classID)
+    },
+    {
+      icon: <PersonRemoveIcon color="error" />, name: t("deleteAllStudents"),
+      action: () => deleteHandler(classID, "StudentsClass")
+    },
+  ];
 
-                        <TableTemplate buttonHaver={StudentsButtonHaver} columns={studentColumns} rows={studentRows} />
-                        <SpeedDialTemplate actions={studentActions} />
-                    </>
-                )}
-            </>
-        )
-    }
+  const ClassStudentsSection = () => {
+    return (
+      <>
+        {getresponse ? (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+            <GreenButton
+              variant="contained"
+              onClick={() => navigate("/Admin/class/addstudents/" + classID)}
+            >
+              {t("addStudents")}
+            </GreenButton>
+          </Box>
+        ) : (
+          <>
+            <Typography variant="h5" gutterBottom>
+              {t("studentsList")}:
+            </Typography>
 
-    const ClassTeachersSection = () => {
-        return (
-            <>
-                {getresponse ? (
-                    <>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                            <GreenButton
-                                variant="contained"
-                                onClick={() => navigate("/Admin/class/addteachers/" + classID)}
-                            >
-                                Add Teachers
-                            </GreenButton>
-                        </Box>
-                    </>
-                ) : (
-                    <>
-                        <Typography variant="h5" gutterBottom>
-                            Teachers List:
-                        </Typography>
+            <TableTemplate buttonHaver={StudentsButtonHaver} columns={studentColumns} rows={studentRows} />
+            <SpeedDialTemplate actions={studentActions} />
+          </>
+        )}
+      </>
+    );
+  };
 
-                        <TableTemplate buttonHaver={StudentsButtonHaver} columns={studentColumns} rows={studentRows} />
-                        <SpeedDialTemplate actions={studentActions} />
-                    </>
-                )}
-            </>
-        )
-    }
+  const teacherColumns = [
+    { id: 'name', label: t("name"), minWidth: 170 },
+    { id: 'rollNum', label: t("rollNumber"), minWidth: 100 },
+  ];
 
-    const ClassDetailsSection = () => {
-        const numberOfSubjects = subjectsList.length;
-        const numberOfStudents = sclassStudents.length;
+  const teacherRows = sclassStudents.map((student) => {
+    return {
+      name: student.name,
+      rollNum: student.rollNum,
+      id: student._id,
+    };
+  });
 
-        return (
-            <>
-                <Typography variant="h4" align="center" gutterBottom>
-                    Class Details
-                </Typography>
-                <Typography variant="h5" gutterBottom>
-                    This is Class {sclassDetails && sclassDetails.sclassName}
-                </Typography>
-                <Typography variant="h6" gutterBottom>
-                    Number of Subjects: {numberOfSubjects}
-                </Typography>
-                <Typography variant="h6" gutterBottom>
-                    Number of Students: {numberOfStudents}
-                </Typography>
-                {getresponse &&
-                    <GreenButton
-                        variant="contained"
-                        onClick={() => navigate("/Admin/class/addstudents/" + classID)}
-                    >
-                        Add Students
-                    </GreenButton>
-                }
-                {response &&
-                    <GreenButton
-                        variant="contained"
-                        onClick={() => navigate("/Admin/addsubject/" + classID)}
-                    >
-                        Add Subjects
-                    </GreenButton>
-                }
-            </>
-        );
-    }
+  const TeachersButtonHaver = ({ row }) => {
+    return (
+      <>
+        <IconButton onClick={() => deleteHandler(row.id, "Student")}>
+          <PersonRemoveIcon color="error" />
+        </IconButton>
+        <BlueButton
+          variant="contained"
+          onClick={() => navigate("/Admin/students/student/" + row.id)}
+        >
+          {t("view")}
+        </BlueButton>
+      </>
+    );
+  };
+
+  const teacherActions = [
+    {
+      icon: <PersonAddAlt1Icon color="primary" />, name: t("addNewStudent"),
+      action: () => navigate("/Admin/class/addstudents/" + classID)
+    },
+    {
+      icon: <PersonRemoveIcon color="error" />, name: t("deleteAllStudents"),
+      action: () => deleteHandler(classID, "StudentsClass")
+    },
+  ];
+
+  const ClassTeachersSection = () => {
+    return (
+      <>
+        {getresponse ? (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+            <GreenButton
+              variant="contained"
+              onClick={() => navigate("/Admin/class/addteacher/" + classID)}
+            >
+              {t("addStudents")}
+            </GreenButton>
+          </Box>
+        ) : (
+          <>
+            <Typography variant="h5" gutterBottom>
+              {t("teachersList")}:
+            </Typography>
+
+            <TableTemplate buttonHaver={TeachersButtonHaver} columns={teacherColumns} rows={teacherRows} />
+            <SpeedDialTemplate actions={teacherActions} />
+          </>
+        )}
+      </>
+    );
+  };
+
+  const ClassDetailsSection = () => {
+    const numberOfSubjects = subjectsList.length;
+    const numberOfStudents = sclassStudents.length;
 
     return (
-        <>
-            {loading ? (
-                <div>Loading...</div>
-            ) : (
-                <>
-                    <Box sx={{ width: '100%', typography: 'body1', }} >
-                        <TabContext value={value}>
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                                <TabList onChange={handleChange} sx={{ position: 'fixed', width: '100%', bgcolor: 'background.paper', zIndex: 1 }}>
-                                    <Tab label="Details" value="1" />
-                                    <Tab label="Subjects" value="2" />
-                                    <Tab label="Students" value="3" />
-                                    <Tab label="Teachers" value="4" />
-                                </TabList>
-                            </Box>
-                            <Container sx={{ marginTop: "3rem", marginBottom: "4rem" }}>
-                                <TabPanel value="1">
-                                    <ClassDetailsSection />
-                                </TabPanel>
-                                <TabPanel value="2">
-                                    <ClassSubjectsSection />
-                                </TabPanel>
-                                <TabPanel value="3">
-                                    <ClassStudentsSection />
-                                </TabPanel>
-                                <TabPanel value="4">
-                                    <ClassTeachersSection />
-                                </TabPanel>
-                            </Container>
-                        </TabContext>
-                    </Box>
-                </>
+      <Box sx={{ padding: 3 }}>
+        <Paper sx={{ padding: 4, boxShadow: 3, backgroundColor: '#fafafa' }}>
+          <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold' }}>
+            {t("classDetails")}
+          </Typography>
+
+          <Grid container spacing={3} justifyContent="center">
+            {/* Class Name Section */}
+            <Grid item xs={12} md={4}>
+              <Typography variant="h5" align="center" gutterBottom sx={{ fontStyle: 'italic' }}>
+                {t("thisIsClass")} {sclassDetails && sclassDetails.sclassName}
+              </Typography>
+            </Grid>
+
+            {/* Number of Subjects */}
+            <Grid item xs={12} md={4}>
+              <Typography variant="h6" align="center" gutterBottom>
+                <SchoolIcon sx={{ verticalAlign: 'middle', marginRight: 1 }} />
+                {t("numberOfSubjects")}: {numberOfSubjects}
+              </Typography>
+            </Grid>
+
+            {/* Number of Students */}
+            <Grid item xs={12} md={4}>
+              <Typography variant="h6" align="center" gutterBottom>
+                <PeopleIcon sx={{ verticalAlign: 'middle', marginRight: 1 }} />
+                {t("numberOfStudents")}: {numberOfStudents}
+              </Typography>
+            </Grid>
+          </Grid>
+
+          <Box sx={{ textAlign: 'center', marginTop: 3 }}>
+            {getresponse && (
+              <GreenButton
+                variant="contained"
+                onClick={() => navigate("/Admin/class/addstudents/" + classID)}
+                sx={{
+                  marginRight: 2,
+                  backgroundColor: '#388e3c',
+                  '&:hover': { backgroundColor: '#2c6f29' },
+                }}
+              >
+                <PeopleIcon sx={{ marginRight: 1 }} />
+                {t("addStudents")}
+              </GreenButton>
             )}
-            <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
-        </>
+
+            {response && (
+              <GreenButton
+                variant="contained"
+                onClick={() => navigate("/Admin/addsubject/" + classID)}
+                sx={{
+                  backgroundColor: '#388e3c',
+                  '&:hover': { backgroundColor: '#2c6f29' },
+                }}
+              >
+                <SubjectIcon sx={{ marginRight: 1 }} />
+                {t("addSubjects")}
+              </GreenButton>
+            )}
+          </Box>
+        </Paper>
+      </Box>
     );
+  };
+
+  const ClassScheduleSection = () => {
+    return (
+      <div>
+        <img
+          src={classScheduleImage}
+          alt="Class Schedule"
+          style={{
+            width: '100%',
+            maxWidth: '800px', 
+            height: 'auto',
+            display: 'block',
+            margin: '0 auto', 
+          }}
+        />
+      </div>
+    );
+  };
+    
+  return (
+    <>
+      {loading ? (
+        <div>{t("loading")}</div>
+      ) : (
+        <>
+          <Box sx={{ width: '100%', typography: 'body1' }} >
+            <TabContext value={value}>
+              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <TabList onChange={handleChange} sx={{ position: 'fixed', width: '100%', bgcolor: 'background.paper', zIndex: 1 }}>
+                  <Tab label={t("details")} value="1" />
+                  <Tab label={t("subjects")} value="2" />
+                  <Tab label={t("students")} value="3" />
+                  <Tab label={t("teachers")} value="4" />
+                  <Tab label={t("schedule")} value="5" />
+                  <Tab label={t("attendance")} value="6" />
+                </TabList>
+              </Box>
+              <Container sx={{ marginTop: "3rem", marginBottom: "4rem" }}>
+                <TabPanel value="1">
+                  <ClassDetailsSection />
+                </TabPanel>
+                <TabPanel value="2">
+                  <ClassSubjectsSection />
+                </TabPanel>
+                <TabPanel value="3">
+                  <ClassStudentsSection />
+                </TabPanel>
+                <TabPanel value="4">
+                  <ClassTeachersSection />
+                </TabPanel>
+                <TabPanel value="5">
+                  <ClassScheduleSection />
+                </TabPanel>
+                <TabPanel value="6">
+                  <ClassAttendanceSection classID={classID} classDetails={sclassDetails} students={sclassStudents} />
+                </TabPanel>
+              </Container>
+            </TabContext>
+          </Box>
+        </>
+      )}
+      <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+    </>
+  );
 };
 
 export default ClassDetails;

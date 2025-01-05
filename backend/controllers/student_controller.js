@@ -171,7 +171,7 @@ const updateExamResult = async (req, res) => {
 };
 
 const studentAttendance = async (req, res) => {
-    const { subName, status, date } = req.body;
+    const { subName, status, attendanceDate } = req.body;
 
     try {
         const student = await Student.findById(req.params.id);
@@ -180,27 +180,19 @@ const studentAttendance = async (req, res) => {
             return res.send({ message: 'Student not found' });
         }
 
-        const subject = await Subject.findById(subName);
+        //const subject = await Subject.findById(subName);
+
 
         const existingAttendance = student.attendance.find(
             (a) =>
-                a.date.toDateString() === new Date(date).toDateString() &&
-                a.subName.toString() === subName
+                a.attendanceDate === attendanceDate
         );
 
         if (existingAttendance) {
             existingAttendance.status = status;
         } else {
-            // Check if the student has already attended the maximum number of sessions
-            const attendedSessions = student.attendance.filter(
-                (a) => a.subName.toString() === subName
-            ).length;
 
-            if (attendedSessions >= subject.sessions) {
-                return res.send({ message: 'Maximum attendance limit reached' });
-            }
-
-            student.attendance.push({ date, status, subName });
+            student.attendance.push({ attendanceDate, status, subName });
         }
 
         const result = await student.save();

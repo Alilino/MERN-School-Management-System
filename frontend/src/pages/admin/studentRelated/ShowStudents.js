@@ -70,7 +70,8 @@ const ShowStudents = () => {
     })
 
     const StudentButtonHaver = ({ row }) => {
-        const options = ['Take Attendance', 'Provide Marks'];
+        const options = [];
+        // const options = ['Take Attendance', 'Provide Marks'];
 
         const [open, setOpen] = React.useState(false);
         const anchorRef = React.useRef(null);
@@ -118,7 +119,7 @@ const ShowStudents = () => {
                     View
                 </BlueButton>
                 <React.Fragment>
-                    <ButtonGroup variant="contained" ref={anchorRef} aria-label="split button">
+                    {/* <ButtonGroup variant="contained" ref={anchorRef} aria-label="split button">
                         <Button onClick={handleClick}>{options[selectedIndex]}</Button>
                         <BlackButton
                             size="small"
@@ -130,7 +131,7 @@ const ShowStudents = () => {
                         >
                             {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
                         </BlackButton>
-                    </ButtonGroup>
+                    </ButtonGroup> */}
                     <Popper
                         sx={{
                             zIndex: 1,

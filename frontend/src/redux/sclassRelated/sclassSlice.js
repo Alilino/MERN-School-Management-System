@@ -11,6 +11,7 @@ const initialState = {
     error: null,
     response: null,
     getresponse: null,
+    attendanceMessage: null, // For attendance message
 };
 
 const sclassSlice = createSlice({
@@ -72,6 +73,19 @@ const sclassSlice = createSlice({
             state.subjectsList = [];
             state.sclassesList = [];
         },
+        postRequest: (state) => {
+            state.loading = true;
+            state.error = null;
+            state.attendanceMessage = null;
+        },
+        postSuccess: (state, action) => {
+            state.loading = false;
+            state.attendanceMessage = action.payload;
+        },
+        postFailed: (state, action) => {
+            state.loading = false;
+            state.error = action.payload;
+        },
     },
 });
 
@@ -86,7 +100,10 @@ export const {
     getFailedTwo,
     resetSubjects,
     getSubDetailsSuccess,
-    getSubDetailsRequest
+    getSubDetailsRequest,
+    postRequest,
+    postSuccess,
+    postFailed,
 } = sclassSlice.actions;
 
 export const sclassReducer = sclassSlice.reducer;

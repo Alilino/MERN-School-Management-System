@@ -3,19 +3,15 @@ import { createTheme } from '@mui/material/styles';
 const darkTheme = createTheme({
     palette: {
         mode: 'dark',
-        primary: {
-            main: '#90caf9', // Example: light blue
-        },
-        secondary: {
-            main: '#f48fb1', // Example: pink
-        },
+        primary: { main: '#64b5f6' }, // Slightly brighter blue
+        secondary: { main: '#ff4081' }, // Brighter pink
         background: {
-            default: '#121212', // Dark background
-            paper: '#1e1e1e',  // Slightly lighter for cards/panels
+            default: '#181818', // A lighter dark gray for better readability
+            paper: '#282828',   // Contrasting with default background
         },
         text: {
-            primary: '#ffffff', // White text
-            secondary: '#b0b0b0', // Gray text
+            primary: '#e0e0e0', // Lighter gray for better visibility
+            secondary: '#a0a0a0', // Adjust contrast
         },
     },
     typography: {

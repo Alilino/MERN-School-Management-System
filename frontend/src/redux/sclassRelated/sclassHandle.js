@@ -9,7 +9,10 @@ import {
     getFailedTwo,
     getSubjectsSuccess,
     getSubDetailsSuccess,
-    getSubDetailsRequest
+    getSubDetailsRequest,
+    postRequest,
+    postSuccess,
+    postFailed
 } from './sclassSlice';
 
 export const getAllSclasses = (id, address) => async (dispatch) => {
@@ -97,3 +100,23 @@ export const getSubjectDetails = (id, address) => async (dispatch) => {
         dispatch(getError(error));
     }
 }
+
+export const postClassAttendance = (classId, date) => async (dispatch) => {
+    dispatch(postRequest());
+
+    try {
+        const result = await axios.post(
+            `${process.env.REACT_APP_BASE_URL}/SclassAttendance`,
+            { classId, date },
+            { headers: { "Content-Type": "application/json" } }
+        );
+
+        dispatch(postSuccess(result.data.message));
+    } catch (error) {
+        const errorMessage =
+            error.response && error.response.data && error.response.data.message
+                ? error.response.data.message
+                : error.message;
+        dispatch(postFailed(errorMessage));
+    }
+};
