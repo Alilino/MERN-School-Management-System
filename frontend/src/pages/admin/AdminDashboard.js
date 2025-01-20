@@ -173,7 +173,7 @@ const AdminDashboard = ({ darkMode, setDarkMode, language, setLanguage }) => {
               element={<TeacherDetails />}
             />
             <Route
-              path="/Admin/teachers/chooseclass"
+              path="/Admin/teachers/chooseclass/:teacherId"
               element={<ChooseClass situation="Teacher" />}
             />
             <Route

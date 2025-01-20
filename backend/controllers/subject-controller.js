@@ -6,31 +6,46 @@ const subjectCreate = async (req, res) => {
     try {
         const subjects = req.body.subjects.map((subject) => ({
             subName: subject.subName,
-            subCode: subject.subCode,
-            sessions: subject.sessions,
+            beginTime: subject.beginTime,
+            endTime: subject.endTime,
         }));
 
-        const existingSubjectBySubCode = await Subject.findOne({
-            'subjects.subCode': subjects[0].subCode,
+        // Check if any of the provided subNames already exist
+        const subNames = subjects.map((subject) => subject.subName);
+        const existingSubjects = await Subject.find({
+            subName: { $in: subNames },
             school: req.body.adminID,
         });
 
-        if (existingSubjectBySubCode) {
-            res.send({ message: 'Sorry this subcode must be unique as it already exists' });
-        } else {
-            const newSubjects = subjects.map((subject) => ({
-                ...subject,
-                sclassName: req.body.sclassName,
-                school: req.body.adminID,
-            }));
-
-            const result = await Subject.insertMany(newSubjects);
-            res.send(result);
+        if (existingSubjects.length > 0) {
+            return res.status(400).send({
+                message: 'One or more subjects already exist with the same name.',
+                duplicates: existingSubjects.map((sub) => sub.subName),
+            });
         }
+
+        // Add additional fields to each subject
+        const newSubjects = subjects.map((subject) => ({
+            ...subject,
+            sclassName: req.body.sclassName,
+            school: req.body.adminID,
+        }));
+
+        // Save subjects one by one to trigger middleware
+        const createdSubjects = [];
+        for (const subject of newSubjects) {
+            const newSubject = new Subject(subject);
+            await newSubject.save(); // This triggers `pre('save')` middleware
+            createdSubjects.push(newSubject);
+        }
+
+        res.send(createdSubjects);
     } catch (err) {
-        res.status(500).json(err);
+        console.error(err);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
+
 
 const allSubjects = async (req, res) => {
     try {
@@ -49,13 +64,22 @@ const allSubjects = async (req, res) => {
 const classSubjects = async (req, res) => {
     try {
         let subjects = await Subject.find({ sclassName: req.params.id })
+            .populate('sclassName', 'sclassName') // Populate class name
+            .populate('teacher', 'name')          // Populate teacher name
+            .lean();  // Convert to plain JavaScript objects
+
         if (subjects.length > 0) {
-            res.send(subjects)
+            const transformedSubjects = subjects.map(subject => ({
+                ...subject,
+                className: subject.sclassName?.sclassName || 'N/A',
+                teacherName: subject.teacher?.name || 'Not Assigned'
+            }));
+            res.send(transformedSubjects);
         } else {
             res.send({ message: "No subjects found" });
         }
     } catch (err) {
-        res.status(500).json(err);
+        res.status(500).json({ error: err.message });
     }
 };
 

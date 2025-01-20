@@ -1,12 +1,24 @@
+// First, create a counter schema for auto-incrementing roll numbers
 const mongoose = require("mongoose");
 
+const counterSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  sequence_value: { type: Number, default: 0 }
+});
+
+const Counter = mongoose.model('Counter', counterSchema);
+
+// Modified student schema
 const studentSchema = new mongoose.Schema(
   {
-    rollNum: {
-      type: Number,
+    name: {
+      type: String,
       required: true,
     },
-
+    rollNum: {
+      type: Number,
+      unique: true,
+    },
     password: {
       type: String,
       required: true,
@@ -25,44 +37,34 @@ const studentSchema = new mongoose.Schema(
       type: String,
       default: "Student",
     },
-
     dateOfBirth: {
       type: Date,
     },
-
     fatherName: {
       type: String,
     },
-
     fatherPhone: {
       type: String,
     },
-
     fatherEmail: {
       type: String,
     },
-
     motherName: {
       type: String,
     },
-
     motherPhone: {
       type: String,
     },
-
     motherEmail: {
       type: String,
     },
-
     emergencyPhone: {
       type: String,
     },
-
     active: {
       type: Boolean,
       default: true,
     },
-
     examResult: [
       {
         subName: {
@@ -96,5 +98,22 @@ const studentSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+studentSchema.pre('save', async function (next) {
+  const doc = this;
+  if (doc.isNew) {
+    try {
+      const counter = await Counter.findByIdAndUpdate(
+        { _id: 'rollNum' },
+        { $inc: { sequence_value: 1 } },
+        { new: true, upsert: true }
+      );
+      doc.rollNum = counter.sequence_value;
+    } catch (error) {
+      return next(error);
+    }
+  }
+  next();
+});
 
 module.exports = mongoose.model("student", studentSchema);

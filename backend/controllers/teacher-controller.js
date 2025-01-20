@@ -3,26 +3,55 @@ const Teacher = require('../models/teacherSchema.js');
 const Subject = require('../models/subjectSchema.js');
 
 const teacherRegister = async (req, res) => {
-    const { name, email, password, role, school, teachSubject, teachSclass } = req.body;
+    const { name, email, password, role, school, teachSclass, subjects } = req.body;
     try {
+        // Check for existing teacher
+        const existingTeacherByEmail = await Teacher.findOne({ email });
+        if (existingTeacherByEmail) {
+            return res.send({ message: 'Email already exists' });
+        }
+
+        // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPass = await bcrypt.hash(password, salt);
 
-        const teacher = new Teacher({ name, email, password: hashedPass, role, school, teachSubject, teachSclass });
+        // Create teacher with initial class and subjects
+        const teacher = new Teacher({
+            name,
+            email,
+            password: hashedPass,
+            role,
+            school,
+            classSubjects: [{
+                class: teachSclass,
+                subjects: subjects || [] // Array of subject IDs
+            }]
+        });
 
-        const existingTeacherByEmail = await Teacher.findOne({ email });
+        // Save teacher
+        let result = await teacher.save();
 
-        if (existingTeacherByEmail) {
-            res.send({ message: 'Email already exists' });
+        // Update subjects with teacher reference
+        if (subjects && subjects.length > 0) {
+            await Subject.updateMany(
+                { _id: { $in: subjects } },
+                { $set: { teacher: teacher._id } }
+            );
         }
-        else {
-            let result = await teacher.save();
-            await Subject.findByIdAndUpdate(teachSubject, { teacher: teacher._id });
-            result.password = undefined;
-            res.send(result);
-        }
+
+        // Remove password from response
+        const { password: _, ...teacherData } = result._doc;
+
+        // Populate and send response
+        const populatedTeacher = await Teacher.findById(result._id)
+            .populate("classSubjects.class", "sclassName")
+            .populate("classSubjects.subjects", "subName");
+
+        res.send(populatedTeacher);
+
     } catch (err) {
-        res.status(500).json(err);
+        console.error('Teacher registration error:', err);
+        res.status(500).json({ message: 'Error registering teacher', error: err.message });
     }
 };
 
@@ -51,11 +80,13 @@ const teacherLogIn = async (req, res) => {
 const getTeachers = async (req, res) => {
     try {
         let teachers = await Teacher.find({ school: req.params.id })
-            .populate("teachSubject", "subName")
-            .populate("teachSclass", "sclassName");
+            .populate("classSubjects.class", "sclassName")
+            .populate("classSubjects.subjects", "subName");
+
         if (teachers.length > 0) {
-            let modifiedTeachers = teachers.map((teacher) => {
-                return { ...teacher._doc, password: undefined };
+            const modifiedTeachers = teachers.map((teacher) => {
+                const { password, ...teacherData } = teacher._doc;
+                return teacherData;
             });
             res.send(modifiedTeachers);
         } else {
@@ -69,35 +100,85 @@ const getTeachers = async (req, res) => {
 const getTeacherDetail = async (req, res) => {
     try {
         let teacher = await Teacher.findById(req.params.id)
-            .populate("teachSubject", "subName sessions")
             .populate("school", "schoolName")
-            .populate("teachSclass", "sclassName")
+            .populate("classSubjects.class", "sclassName")
+            .populate("classSubjects.subjects", "subName sessions");
+
         if (teacher) {
-            teacher.password = undefined;
-            res.send(teacher);
-        }
-        else {
+            const { password, ...teacherData } = teacher._doc;
+            res.send(teacherData);
+        } else {
             res.send({ message: "No teacher found" });
         }
     } catch (err) {
         res.status(500).json(err);
     }
-}
+};
 
 const updateTeacherSubject = async (req, res) => {
     const { teacherId, teachSubject } = req.body;
+    
     try {
-        const updatedTeacher = await Teacher.findByIdAndUpdate(
-            teacherId,
-            { teachSubject },
+        // First, get the subject details to know which class it belongs to
+        const subject = await Subject.findById(teachSubject)
+            .populate('sclassName')
+            .lean();
+
+        if (!subject) {
+            return res.status(404).json({ message: "Subject not found" });
+        }
+
+        // Find the teacher
+        const teacher = await Teacher.findById(teacherId);
+        
+        if (!teacher) {
+            return res.status(404).json({ message: "Teacher not found" });
+        }
+
+        // Check if the teacher already has this class in their classSubjects
+        const existingClassIndex = teacher.classSubjects.findIndex(
+            cs => cs.class.toString() === subject.sclassName._id.toString()
+        );
+
+        if (existingClassIndex >= 0) {
+            // Class exists, check if subject is already added
+            const subjects = teacher.classSubjects[existingClassIndex].subjects;
+            if (!subjects.includes(subject._id)) {
+                // Add the subject to existing class
+                teacher.classSubjects[existingClassIndex].subjects.push(subject._id);
+            }
+        } else {
+            // Class doesn't exist, add new class with subject
+            teacher.classSubjects.push({
+                class: subject.sclassName._id,
+                subjects: [subject._id]
+            });
+        }
+
+        // Save the updated teacher
+        const updatedTeacher = await teacher.save();
+
+        // Update the subject with the teacher reference
+        await Subject.findByIdAndUpdate(
+            teachSubject,
+            { teacher: teacherId },
             { new: true }
         );
 
-        await Subject.findByIdAndUpdate(teachSubject, { teacher: updatedTeacher._id });
+        // Populate the response data
+        const populatedTeacher = await Teacher.findById(updatedTeacher._id)
+            .populate('classSubjects.class')
+            .populate('classSubjects.subjects')
+            .lean();
 
-        res.send(updatedTeacher);
+        res.json(populatedTeacher);
+
     } catch (error) {
-        res.status(500).json(error);
+        console.error('Error in updateTeacherSubject:', error);
+        res.status(500).json({ 
+            message: "Error updating teacher subject",
+            error: error.message 
+        });
     }
 };
 

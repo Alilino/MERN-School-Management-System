@@ -1,4 +1,4 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
 const teacherSchema = new mongoose.Schema({
     name: {
@@ -23,27 +23,39 @@ const teacherSchema = new mongoose.Schema({
         ref: 'admin',
         required: true,
     },
-    teachSubject: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'subject',
-    },
-    teachSclass: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'sclass',
-        required: true,
-    },
+    classSubjects: [{
+        class: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'sclass',
+            required: true
+        },
+        subjects: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'subject'
+        }]
+    }],
     attendance: [{
         date: {
             type: Date,
             required: true
         },
-        presentCount: {
+        status: {
             type: String,
+            enum: ['present', 'absent', 'half-day', 'leave'],
+            required: true
         },
-        absentCount: {
+        timeIn: Date,
+        timeOut: Date,
+        leaveReason: String,
+        leaveType: {
             type: String,
+            enum: ['sick', 'casual', 'emergency', 'other']
         }
     }]
 }, { timestamps: true });
 
-module.exports = mongoose.model("teacher", teacherSchema)
+// Indexes for efficient querying
+teacherSchema.index({ 'classSubjects.class': 1, 'classSubjects.subjects': 1 });
+teacherSchema.index({ 'attendance.date': 1, 'attendance.status': 1 });
+
+module.exports = mongoose.model("teacher", teacherSchema);

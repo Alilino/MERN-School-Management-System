@@ -20,7 +20,7 @@ const AddSubject = () => {
 
   const { status, response, error, currentUser } = useSelector((state) => state.user);
 
-  const [subjects, setSubjects] = useState([{ subName: "", subCode: "", sessions: "" }]);
+  const [subjects, setSubjects] = useState([{ subName: "", beginTime: "", endTime: "" }]);
   const [showPopup, setShowPopup] = useState(false);
   const [message, setMessage] = useState("");
   const [loader, setLoader] = useState(false);
@@ -35,7 +35,7 @@ const AddSubject = () => {
   };
 
   const handleAddSubject = () => {
-    setSubjects([...subjects, { subName: "", subCode: "", sessions: "" }]);
+    setSubjects([...subjects, { subName: "", beginTime: "", endTime: "" }]);
   };
 
   const handleRemoveSubject = (index) => {
@@ -53,8 +53,8 @@ const AddSubject = () => {
       adminID,
       subjects: subjects.map((subject) => ({
         subName: subject.subName,
-        subCode: subject.subCode,
-        sessions: subject.sessions,
+        beginTime: subject.beginTime,
+        endTime: subject.endTime,
       })),
     };
 
@@ -98,7 +98,7 @@ const AddSubject = () => {
               Subject {index + 1}
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={4}>
                 <TextField
                   label="Subject Name"
                   value={subject.subName}
@@ -107,27 +107,34 @@ const AddSubject = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={4}>
                 <TextField
-                  label="Subject Code"
-                  value={subject.subCode}
-                  onChange={handleChange(index, "subCode")}
+                  label="Begin Time"
+                  type="time"
+                  value={subject.beginTime}
+                  onChange={handleChange(index, "beginTime")}
                   fullWidth
                   required
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={4}>
                 <TextField
-                  label="Sessions"
-                  type="number"
-                  value={subject.sessions}
-                  onChange={handleChange(index, "sessions")}
+                  label="End Time"
+                  type="time"
+                  value={subject.endTime}
+                  onChange={handleChange(index, "endTime")}
                   fullWidth
                   required
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
                 />
               </Grid>
               {index > 0 && (
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12}>
                   <Button
                     variant="outlined"
                     color="error"

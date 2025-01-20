@@ -2,8 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Container, Grid, Box, Button } from '@mui/material';
 import styled from 'styled-components';
-import Students from "../assets/students.svg";
-import { LightPurpleButton } from '../components/buttonStyles';
+import Students from "../assets/logo.jpg";
+import { LightPurpleButton, IndigoButton } from '../components/buttonStyles';
 
 const Homepage = () => {
     return (
@@ -15,22 +15,23 @@ const Homepage = () => {
                 <Grid item xs={12} md={6}>
                     <StyledPaper elevation={3}>
                         <StyledTitle>
-                            Welcome to
+                            Willkommen bei
                             <br />
-                            School Management
+                            Annasihah
                             <br />
-                            System
+                            Schule
                         </StyledTitle>
                         <StyledText>
-                            Streamline school management, class organization, and add students and faculty.
-                            Seamlessly track attendance, assess performance, and provide feedback.
-                            Access records, view marks, and communicate effortlessly.
+                        Unsere Schule ist ein Ort, an dem jeder Schüler die Möglichkeit hat, sein volles Potenzial zu entfalten.
+                         Mit einem starken Fokus auf Wissen und Charakterbildung bereiten wir Kinder darauf vor, 
+                         die Herausforderungen des Lebens selbstbewusst zu meistern. Bildung bedeutet für uns mehr 
+                         als nur Bücher – sie ist der Schlüssel zu einer besseren Welt.
                         </StyledText>
                         <StyledBox>
                             <StyledLink to="/choose">
-                                <LightPurpleButton variant="contained" fullWidth>
+                                <IndigoButton variant="contained" fullWidth>
                                     Login
-                                </LightPurpleButton>
+                                </IndigoButton>
                             </StyledLink>
                             <StyledLink to="/chooseasguest">
                                 <Button variant="outlined" fullWidth
